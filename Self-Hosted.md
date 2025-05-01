@@ -89,18 +89,31 @@ The minimum system requirements for installing Grafana on a server
 - Minimum Recommended Memory: 512 MB
 - Minimum recommended CPU: 1 Core
 
-  Despite these being small requirements, it would be best to select an instance type that offers a decent amount of memory and processing power as a server that will host Grafana. That said, I selected t2.xlarge at the 64 bit architecture for the Instance type, because it offers a decent amount of memory that can help with Apache serving and Grafana hosting simultaneously, and is a relatively cheap option to use via AWS priced at 0.1856 USD per hour.
+  Despite these being small requirements, it would be best to select an instance type that offers a decent amount of memory and processing power as a server that will host Grafana. That said, I selected t2.xlarge at the 64 bit architecture for the Instance type, because it offers a decent amount of memory that can help with Grafana hosting, and is a relatively cheap option to use via AWS priced at 0.1856 USD per hour.
 
 # Volume Size 
 As mentioned previously, storage is a factor with hosting Grafana. It requires that 512 MB of free space exist on an environment in order to be hosted.
 That said, the configured storage I had set for the instance is at 30 GB with a general purpose SSD.
 
+Storage Management will also be handled through the S3 Bucket cloud environment, however, this will be detailed in depth at a later point in the documentation
+
 ### 4. Cost estimates
 _____________________
+Cost estimates of Grafana will rely on how much Grafana utilizes and costs, and how much the AWS service utilizes and uses. They will typically be based upon factors that we have in this case such as
+- Elastic IPs
+- Instance Pricing
+- Amazon Machine Imaging
+- Amazon Web Service charges
+
+# Projected Dashboard Costs
+According to the Amazon Web Service dashboard, a projected cost for running the service on an Ubuntu layered server 
+![image](https://github.com/user-attachments/assets/b97b58c1-3187-44b5-a8ff-9b9154817424)
+
+Total forcasted for this assignment is roughly around $25.17 
+
 
 
 ### 5. Installation Process
 ______________________________
 For the most important process, installing Grafana and Apache.
 Starting with the Grafana process, the
-
