@@ -93,7 +93,7 @@ The minimum system requirements for installing Grafana on a server
 
 # Volume Size 
 As mentioned previously, storage is a factor with hosting Grafana. It requires that 512 MB of free space exist on an environment in order to be hosted.
-That said, the configured storage I had set for the instance is at 30 GB
+That said, the configured storage I had set for the instance is at 30 GB with a general purpose SSD.
 
 ### 4. Cost estimates
 _____________________
@@ -101,5 +101,6 @@ _____________________
 
 ### 5. Installation Process
 ______________________________
-For the most important process, installing Grafana and Apache
+For the most important process, installing Grafana and Apache.
+Starting with the Grafana process, the
 
