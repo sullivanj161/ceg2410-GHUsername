@@ -66,7 +66,6 @@ ________________________
 The instance I chose to host the Grafana service is the Ubuntu server. I chose this because Ubuntu is a service I feel confident using and an environment that I have experience in not just from this class, but throughout my entire school career. Grafana is also absolutely compatible with Ubuntu and installing Grafana on a Linux flavored environment is an easy and straightforward experience to achieve.
 
 # AMI (Amazon Machine Image)
-
 The Amazon Machine Image I determined was the best fit for running Grefana was Ubuntu Server 24.04 LTS
 I chose this Machine Image for a multitude of reasons 
 According to a ZDNET article I found and the official Ubuntu website, reasons to generally choose this interface for
@@ -100,6 +99,7 @@ That said, the configured storage I had set for the instance is at 30 GB
 _____________________
 
 
-### 5. Installation Process 
+### 5. Installation Process
+______________________________
 For the most important process, installing Grafana and Apache
 
