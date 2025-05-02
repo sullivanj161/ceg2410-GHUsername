@@ -36,7 +36,7 @@ _________________________
 # Subnet Block
 The Subnet block for Grafana was created using the same IP addresses however, these subnets use a /24 CIDR block. I created three subnets
 -Public 10.0.10.0/24 (typically used for mainly instances that regard using 
--Private 10.0.20.0/24 (typically used for more internal instances such as 
+-Private 10.0.20.0/24 (typically used for more internal instances)
 
 # Route Table Rules  
 When creating the Route Tables for the Grafana instance to function, I added route tables to all of the subnets that were created
@@ -403,11 +403,22 @@ Above: image of NodeExporter functioning, while it was idle at the time of the s
 
 ### 6. Security
 ______________________________
-The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana. Not only that, but prior mentioned, server and instance access is limited throughout the AWS
+The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana. Not only that, but prior mentioned, server and instance access is limited throughout the AWS. On the basis of system administration, security is ultimately one of (if not) the biggest game factors that are a big obstacle when working in the field. In many ways, security is important because
+
+- Keeping integrity data: You always want to ensure that your dat is trustworthy and accurate
+- Disasters and Risks: In the event of something like a ransomeware attack, there is much importance in developing security countermeasures from a physical and network standpoint
+- Managing User Access: Resides in the role of an admin, managing users in the workplace and also handling how nonusers seek and perceive company data as an asset that can be acquired unethically
+
+## Restriction os Users
+
+# Server Access
+The restriction that is deployed on the server is both of software level and on hardware level of deployment. To start off, on the basis of Grafana, 
+
+The server itself is locked by a 30 character
 
 # Restriction of Access in AWS
 
-Security Groups, which are essentially instance based control menus that control what goes in and what goes out
+Security Groups, which are essentially instance based control menus that control what goes in and what goes out. As mentioned before, I have developed both NACLs and Security Groups for both the VPC and the Instance. The devices on the subnet are given access to such limited information on both the NACL and the SG. 
 
 ![image](https://github.com/user-attachments/assets/cb0b2832-8f08-45dc-86b8-71262524d70f)
 Example of how User Access Control functions in Grafana
@@ -439,6 +450,68 @@ Access Control List Usage in Grafana
 
 ### 8. Backup Policy
 ______________________________
+While backups are hypothetical in this case, in real events, backups can be a crucial part of maintaining an AWS server environment and will help the server run more efficiently. 
+
+#Good Backups will Consist of?
+
+Good backups in the event of potential data loss that may effect both loss of Grafana and Prometheus. Grafana's suggestion is to consider backing up important information according to their website at https://grafana.com/docs/grafana/latest/administration/back-up-grafana/. such important information can be 
+
+- Back up custom configuration file $WORKING_DIR/custom.ini (depending on where stored)
+- Back up the defaults cofiguration file $WORKING_DIR/custom.ini
+- Back up the default location for SQLite data in a binary or source installation: $WORKING_DIR/data/grafana.db
+- MySQL can also be backed up using the commmands mysqldump -u root -p[root_password] [grafana] > grafana_backup.sql per according to the website
+- Data assets and web assets used for building dashboards (Also good for Prometheus as well)
+
+# Prometheus good backups?
+Prometheus, another software that should also highly considered for backups. According to https://prometheus.io/docs/prometheus/latest/storage/ , Prometheus includes a local on-disk time series database, but also optionally integrates with remote storage systems. Meaning that it can be stored on both the server itself and on Prometheus itself too. I also found that Prometheus data storages can be conducted via a cloud service storage opportunity known as a S3 bucket.
+
+# Good backups with consist of?
+According to ChatGPT, this list may be a selection of good files to consider backing up for the Prometheus software
+
+- Configuration file for Prometheus /etc/prometheus
+- TSDB data files library  /var/lib/prometheus/ stores all time data series that is collected by Prometheus
+- Created rules file that dictate recording and data rules for Prometheus
+- Data assets and web assets used for building dashboards
+- Service Discovery JSON or or YAML files used for performance optimied metrics and alert triggers via Prometheus 
+
+  # Estimated Backup Time and Recovery incase of failure
+  When performing the back up for Grafana, Prometheus, and most importantly the EC2 instance. All three are going to liekly have a dedicated backup time that will be based upon how much is stored onto each software at the current moment the backup is conducted.
+
+  # Grafana
+
+- Amount of Data: Since our Grafana instance here is relatively new, and not a lot of data is present, According to the Grafana website, the free version of Grafana can retain data for up to 14 days via https://community.grafana.com/t/metrics-and-data-retention/106507 I would suggest that the amount of data that can be that can be backed up and set for recovery is around
+
+- 10 - 100 MB of assets and Grafana data
+
+- Estimated Recovery Time: For long as the data that persists in the Grafana interfact and for long as the server has a stable internet connection, in the event of 
+
+- Time to backup: For long as the server has a stable and decent internet connection or there is no corruption among the files. It can also vary for how much is stored on the actual services themselves, for example Prometheus may usually take longer than Grafana as it may hold lots of TSDB files and a TSDB snapshot that are important for the databases and is the operating system to function. the time to backup in the case of recovery is suggested to be aboutT
+
+- 15~30 mins (according to ChatGPT for Grafana)
+
+- Roughly 40mins ~ 2 hours (rough estimate, depending on how much backed up data exists)
+
+- In the event of a failure, it would be much longer as there may be other steps to take in order to mitigate the failure.
+According to ChatGPT a decent data plan could be to 
+
+- First the Failure would need to be detected
+
+- Then a Disaster Recovery Plan would need to be introduced, such as what to do, how data would be recovered in the event of a failure or disaster
+
+- Launch new EC2 instance
+
+-Attach same EBS volume (if intact) or new volume
+
+-Reinstall Prometheus binary or use your AMI
+
+-Reapply security groups, IAM roles, etc.
+
+- Copy all backed up files on either Prometheus or Grafana over to the newly implemented libraries and directories for ability to reaccess
+  For example, if a backup was conducted via S3, an entire directory that was backed up can be re copied back over to the software via a command like aws s3 sync s3://your-bucket/prometheus-tsdb/ /var/lib/prometheus/
+
+
+   # 3-2-1 Go Backup Plan!
+  One of the best countermeasures for data recovery is to establish a well defying and easy to use data backup plan. This is beneficial to have multiple access spots for data backup  to choose from if more than one option for data backup tends to not work in the event of failure or disaster
 
 
 ### 9. Troubleshooting Issues Encountered
