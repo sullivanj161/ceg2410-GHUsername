@@ -215,11 +215,113 @@ Step 9: Access it!!! For the final step, confirm it is running, this can be done
 
 # Data Source Install 
 
-After setting up Grafana, in order to be able to see information be presented in the Grafana interface, I need to set up a datasource, for my data source, I chose Prometheus, I installed this on my current server that I am hosting. The steps to install are as follows
+After setting up Grafana, in order to be able to see information be presented in the Grafana interface, I need to set up a datasource, for my data source, I chose Prometheus, I installed this on my current server that I am hosting. The steps to install are as follows. The source I used to install the Promethesus data source was from like the previous section dealing with installing Grafana from CherryServers at https://www.cherryservers.com/blog/install-prometheus-ubuntu
+Lets install Prometheus
+
+- Step 1 Update packages
+
+  sudo apt update
+
+  Like with most instance of installing new software on Debian based machines, it is important to first and foremost issue a sudo apt update command to ensure that the most recent packages are available and up to date.
+
+- Step 2 Create a System User for Prometheus
+
+  sudo groupadd --system prometheus
+  sudo useradd -s /sbin/nologin --system -g prometheus prometheus\
+
+These two commands are responsible for creating both system groups, such as in the first command and users such as in the second command. It will essentially have Prometheus run as user and a group simultaneously
+
+- Step 3 Create directories for Prometheus
+
+sudo mkdir /etc/prometheus
+sudo mkdir /var/lib/prometheus
+
+These commands are responsible for creating libraries and directories for storing configuration files for the Prometheus software. They also serve as data storage for the software too.
+
+- Step 4 Download Prometheus
+
+  wget https://github.com/prometheus/prometheus/releases/download/v2.43.0/prometheus-2.43.0.linux-amd64.tar.gz
+
+  This command is straightforward. It reaches out to the GitHub repo that stores the files for Prometheus and installs and extracts them to the server. To extract the files from the tar file, the following command that the instructions said to use were 
+
+tar vxf prometheus*.tar.gz
+
+- Step 5 Navigate and Configure the Prometheus Directory
+
+  cd prometheus*/
+  sudo mv prometheus /usr/local/bin
+sudo mv promtool /usr/local/bin
+sudo chown prometheus:prometheus /usr/local/bin/prometheus
+sudo chown prometheus:prometheus /usr/local/bin/promtool
+
+First, I needed to move to the Prometheus directory from the file I just extracted. Using the change directory command, I was able to move over there and set ownership to the users and groups for Prometheus that were created in the previous steps. The groups and users needed ownership in order for Prometheus to read and write data to.
+
+- Step 6 Move Configuration Files and Set Ownership
+
+sudo mv consoles /etc/prometheus
+sudo mv console_libraries /etc/prometheus
+sudo mv prometheus.yml /etc/prometheus
+
+sudo chown prometheus:prometheus /etc/prometheus
+sudo chown -R prometheus:prometheus /etc/prometheus/consoles
+sudo chown -R prometheus:prometheus /etc/prometheus/console_libraries
+sudo chown -R prometheus:prometheus /var/lib/prometheus
+
+These files needed to be changed to have proper ownership and moved to proper locations. So in that case Prometheus is able to have access to these said files.
+
+- Step 7 Create Prometheus Systemd Service
+
+  sudo nano /etc/systemd/system/prometheus.service
+
+  This command issues a creation in Nano for creating a system service file for Prometheus. The following is what is required to paste into the service file.
+  [Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/usr/local/bin/prometheus \
+    --config.file /etc/prometheus/prometheus.yml \
+    --storage.tsdb.path /var/lib/prometheus/ \
+    --web.console.templates=/etc/prometheus/consoles \
+    --web.console.libraries=/etc/prometheus/console_libraries
+
+[Install]
+WantedBy=multi-user.target
+
+According to ChatGPT, the configuration allows for Prometheus to run securely and reliably
+For example the entire concept of having prometheus as its own user is on the basis of running as a non login system user. This can limit file access and reduce risk which is good for security.
+
+- Step 8 Reload, restart and check Prometheus status
+
+  sudo systemctl enable prometheus
+sudo systemctl start prometheus
+sudo systemctl status prometheus
+
+These are simple basic post install commands that will require for the software to be reloaded and restarted after a fresh install. This asserts that the software has been completed succesfully during the installation process. I issued a status command to ensure that it is infact running properly and seems to do so.
+
+- Step 9 Allow firewalls for Prometheus
+
+  sudo ufw allow 9090/tcp
+
+  Simple firewall security commands that essentially permit traffic that is flowing towards prometheus 9090 port for basic entry. These firewalls are ultimately important because they direct the flow of traffic that is suitable to enter the network, whilst at the same time, blocking traffic that is unwanted.
+
+  ![image](https://github.com/user-attachments/assets/56db8188-39da-4db0-b26e-785a4a4958ba)
+
+  # Showing data
+
+  Inserting data onto the Dashboard via Prometheus is a useful tool for monitoring. There are many different ways data can be insertted into Grafana!
+
+  - Importing panels
+  - Importing a dashboard via grafana.com
+  - 
 
 ### 6. Security
 ______________________________
-The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana
+The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana.
 
 
 ### 7. Software Features
@@ -227,8 +329,32 @@ ______________________________
 As mentioned previously. Grafana - it is a multi-purpose and multi-platform analysis software that is designed for data visualization and data monitoring that can assist with the following per the Grafana website at https://grafana.com/
 
 - Easily managing incident repsonses
+- Hardware and Network monitoring
 - Reducing costs
 - User Management Dashboards
 - Performance Tests
 - Managing Alert systems
   and a plethora of useful tools that can server of great benefit for business and IT management desks alike
+
+### 8. Backup Policy
+______________________________
+
+
+### 9. Troubleshooting Issues Encountered
+______________________________
+
+The only big issues that I encountered when isntalling Grafana and attempting to do a HTTPS certification on the server website. 
+Starting with the when attempting to install Prometheus, I ran into issues when trying to use a sudo apt command.
+
+It had conflicted with where my package for Grafana GPG key was located and installed in
+![image](https://github.com/user-attachments/assets/8f1e61df-aeb9-473c-8417-bc05c21f7a8e)
+
+ I used Copilot to help resolve the issue, and these were the steps taken as follows
+
+ - Step 1 Updating the repository:
+   echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+
+   I ran this commmand to ensure that the APT would instead use only one key file. Then I wanted to remove the already pre-existing key that was causing conflicting issues 
+
+- Step 2 
+ 
