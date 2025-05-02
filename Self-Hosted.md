@@ -48,11 +48,13 @@ In the case of Routing Tables I had selected only two IP addresses
 # Network ACL Rules
 Arguably, one of the most important aspects of setting up a server, is adding the network access control lists. These are important for dictating what goes in and what goes out of the network. When implementing the Network ACL's I wanted to make sure that only approved IP addresses can get in or out. With that said, I added.
 
-- SSH rules for my home computers, IP 70.92.103.7/24 since I will want to be the only person that is able to shell into the server
-- HTTPS Rules that allow for access from 10.0.0.0/24 which are computers in the subnets
-- HTTP Rules that allow access from 10.0.0.0/24 which are computers in the subnets
+- SSH rules for my home computers, IP 70.92.103.7/24 since I will want to be the only person that is able to shell into the server and manage 
+- HTTPS Rules that allow for access from 10.0.0.0/24 which are computers in the subnets and should be able to communicate with HTTP
+- HTTP Rules that allow access from 10.0.0.0/24 which are computers in the subnets and should be able to communicate with HTTPS (hypothetically, HTTPS not present here)
 - HTTPS rules that allow access from my personal computer at 70.92.103.0/24
 - HTTP rules that allow access from my personal computer at 70.92.103.0/24
+- TCP Port 3000 - Restricted to only me for access purposes and sensitve information that only admins should have the authority and power to view 70.92.103.0/24
+  
 
 The HTTPS and HTTP will only allow for those specific IP addresses to reach the website, and serve as importance since I wish for Apache to server the Grafana service from the Ubuntu server
 
@@ -64,9 +66,24 @@ For my outbound rules, I had created 3 rules,
 
 These rules were created with security for the VPC in mind, as they will restrict all other IP addresses from everything except any of the subnets or my personal public IP address
 
-# Security Group Rules
-For the security group, the formula is still the same. I included 
 
+# Security Group Rules
+For the security group, the formula is still the same. I included the following
+
+Inbound
+- HTTP Port 80 - 10.0.0.0/24 which will allow access inbound for all of the devices that are on either the public or private subnets
+- HTTP Port 443 - 10.0.0.0/24 which will allow access inbound for all of the devices that are on either the public or private subnets
+- HTTP Port 80 - 70.92.103.7/24 which will allow access for me inbound if needed to access via HTTP 
+- HTTP Port 443 - 70.92.103.7/24 which will allow access for me inbound if needed to access via HTTPS (HTTPS is not here but in a hypothetical scenario)
+- SSH Port 22 - 70.92.103.7/24 I will be the only person who will be able to SSH into the instance if needed, as admin in this case.
+- TCP Port 3000 - 70.92.103.7/24 As an admin, I should be the only person throughout the network able to access the Grafana environment for making changes, creating queries for data viewing, and managing databases that are managed through Prometheus
+- TCP Port 9090 - 70.92.103.7/24, As an admin, it should be only me who is able to access and manage the Prometheus database, as unauthorized access can lead to disasters in accidents in mismanaged data, exposure to hostnames and IP's and other sensitive business information
+- TCP Port 9100 - 70.92.103.7/24 - Whilst this port is for the example of using node-exporter, it still is valid practice to restrict access to only me so that only I can scrape metrics, and see what ports may or may not be open.
+  (information suggested about such by ChatGPT)
+
+  Outbound
+  All traffic - 0.0.0.0 All traffic leaving the instance should be able to make its way to the internet, hence the allowing any IP address for outbound being the most realistic to me.
+  
 
 ### 3. AWS Instance Setup
 ________________________
@@ -105,6 +122,9 @@ As mentioned previously, storage is a factor with hosting Grafana. It requires t
 That said, the configured storage I had set for the instance is at 30 GB with a general purpose SSD.
 
 Storage Management will also be handled through the S3 Bucket cloud environment, however, this will be detailed in depth at a later point in the documentation
+
+
+
 
 
 ### 4. Cost estimates
@@ -383,7 +403,14 @@ Above: image of NodeExporter functioning, while it was idle at the time of the s
 
 ### 6. Security
 ______________________________
-The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana.
+The security aspect of the web hosting is extremely important for data protection, privacy and disaster potentiality. There are many ways to configure security methods on Grafana. Not only that, but prior mentioned, server and instance access is limited throughout the AWS
+
+# Restriction of Access in AWS
+
+Security Groups, which are essentially instance based control menus that control what goes in and what goes out
+
+![image](https://github.com/user-attachments/assets/cb0b2832-8f08-45dc-86b8-71262524d70f)
+Example of how User Access Control functions in Grafana
 
 
 ### 7. Software Features
@@ -398,8 +425,17 @@ As mentioned previously. Grafana - it is a multi-purpose and multi-platform anal
 - Managing Alert systems
   and a plethora of useful tools that can server of great benefit for business and IT management desks alike
 
+![image](https://github.com/user-attachments/assets/859f321a-2dc3-4da4-80b1-c4ca7e2824b9)
+Systemm Processes Graph
 
+![image](https://github.com/user-attachments/assets/27d045c0-d8d6-40c6-bd10-7caad9564c06)
+Examples of Queries being ran in Grafana
 
+![image](https://github.com/user-attachments/assets/6f09d63f-bdfe-4615-b25e-a34d980853e7)
+Prometheus recognizing node-exporter
+
+![image](https://github.com/user-attachments/assets/c2792f02-2ccc-4216-874d-61d32bf4e480)
+Access Control List Usage in Grafana
 
 ### 8. Backup Policy
 ______________________________
@@ -421,5 +457,34 @@ It had conflicted with where my package for Grafana GPG key was located and inst
 
    I ran this commmand to ensure that the APT would instead use only one key file. Then I wanted to remove the already pre-existing key that was causing conflicting issues 
 
-- Step 2 
+- Step 2 Removing old key that existed on my end
+  sudo rm /usr/share/keyrings/grafana.key
+
+  There was a conflicting key that existed when I was initially downloading and installing on Grafana. Likely, a sheer accident I was able to remove this and re add the correct key which is performed in the next step/
+
+- Step 3 Re adding the correct key
+ curl -fsSL https://apt.grafana.com/gpg.key | sudo tee /etc/apt/keyrings/grafana.gpg > /dev/null
+
+- Step 4 pushing a sudo apt update regardless of the need
+  After I issued all of these commands, I found that I was able to successfully push an apt command that would go through successfully
+
+# Issue 2
+
+This next issue I had was rather short and simple. When I was installing Grefana, I found that Grefana was in fact set up and running 
+akin to command 
+sudo systemctl status grafana-server 
+
+However, I noticed that I could not for the life of me log into the hosted service using my Elastic IP Address associated with my instance.
+
+I tried 
+
+- Reinstalling Grefana
+- Changing around NACL and Security Group IP Addresses
+- Using Ryan Coy ( a colleague) advice to allow for Port 3000m access in both the NACL and SG
+- Running a curl command at http://98.85.211.221:3000
+- Running sudo systemctl status grafana-server command
+
+An hour later, I found out that it was simply because the changes I was making to my NACL and SG were not actually pointed towards the VPC and Instance I was using. Surely enough, I associated them both and I was able to get into my Grafana hosting service with ease
+
+
  
