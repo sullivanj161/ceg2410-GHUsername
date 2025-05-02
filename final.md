@@ -116,10 +116,6 @@ Nested bullets should be in form: `* Last name - describe how software has this 
 * 
 
 
-
-1. Alec Kelly - Mealie
-
-
   Q: How is the site connected?
   A: Access via HTTP, no HTTPS, attempted to get HTTPS, but could not get HTTPS figured out.
 
