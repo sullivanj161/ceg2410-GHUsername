@@ -73,17 +73,21 @@ For the security group, the formula is still the same. I included the following
 Inbound
 - HTTP Port 80 - 10.0.0.0/24 which will allow access inbound for all of the devices that are on either the public or private subnets
 - HTTP Port 443 - 10.0.0.0/24 which will allow access inbound for all of the devices that are on either the public or private subnets
-- HTTP Port 80 - 70.92.103.7/24 which will allow access for me inbound if needed to access via HTTP 
-- HTTP Port 443 - 70.92.103.7/24 which will allow access for me inbound if needed to access via HTTPS (HTTPS is not here but in a hypothetical scenario)
-- SSH Port 22 - 70.92.103.7/24 I will be the only person who will be able to SSH into the instance if needed, as admin in this case.
-- TCP Port 3000 - 70.92.103.7/24 As an admin, I should be the only person throughout the network able to access the Grafana environment for making changes, creating queries for data viewing, and managing databases that are managed through Prometheus
-- TCP Port 9090 - 70.92.103.7/24, As an admin, it should be only me who is able to access and manage the Prometheus database, as unauthorized access can lead to disasters in accidents in mismanaged data, exposure to hostnames and IP's and other sensitive business information
-- TCP Port 9100 - 70.92.103.7/24 - Whilst this port is for the example of using node-exporter, it still is valid practice to restrict access to only me so that only I can scrape metrics, and see what ports may or may not be open.
+- HTTP Port 80 - 70.92.103.0/24 which will allow access for me inbound if needed to access via HTTP 
+- HTTP Port 443 - 70.92.103.0/24 which will allow access for me inbound if needed to access via HTTPS (HTTPS is not here but in a hypothetical scenario)
+- SSH Port 22 - 70.92.103.0/24 I will be the only person who will be able to SSH into the instance if needed, as admin in this case.
+- TCP Port 3000 - 70.92.103.0/24 As an admin, I should be the only person throughout the network able to access the Grafana environment for making changes, creating queries for data viewing, and managing databases that are managed through Prometheus
+- TCP Port 9090 - 70.92.103.0/24, As an admin, it should be only me who is able to access and manage the Prometheus database, as unauthorized access can lead to disasters in accidents in mismanaged data, exposure to hostnames and IP's and other sensitive business information
+- TCP Port 9100 - 70.92.103.0/24 - Whilst this port is for the example of using node-exporter, it still is valid practice to restrict access to only me so that only I can scrape metrics, and see what ports may or may not be open.
   (information suggested about such by ChatGPT)
 
   Outbound
   All traffic - 0.0.0.0 All traffic leaving the instance should be able to make its way to the internet, hence the allowing any IP address for outbound being the most realistic to me.
-  
+
+  ![image](https://github.com/user-attachments/assets/88ad721e-f2b6-4c13-8f84-008d45963568)
+
+  ![image](https://github.com/user-attachments/assets/809c3e7e-8362-41dd-a5cb-ce12bb93daed)
+
 
 ### 3. AWS Instance Setup
 ________________________
@@ -164,7 +168,11 @@ Again, as mentioned, this is an Ubuntu Server 24.04 LTS AMI, this is priced
 
   There is no additonal charge for this
 
-  
+# Cost of S3 Standards - Potential 3-2-1 Backup Plan component that is potentially suggested.
+According to https://aws.amazon.com/s3/pricing/ the pricing for the S3 is as follows
+  First 50 TB / Month	$0.023 per GB
+Next 450 TB / Month	$0.022 per GB
+Over 500 TB / Month	$0.021 per GB
 
 ### 5. Installation Process
 ______________________________
@@ -409,19 +417,39 @@ The security aspect of the web hosting is extremely important for data protectio
 - Disasters and Risks: In the event of something like a ransomeware attack, there is much importance in developing security countermeasures from a physical and network standpoint
 - Managing User Access: Resides in the role of an admin, managing users in the workplace and also handling how nonusers seek and perceive company data as an asset that can be acquired unethically
 
-## Restriction os Users
-
 # Server Access
 The restriction that is deployed on the server is both of software level and on hardware level of deployment. To start off, on the basis of Grafana, 
+Grafana has access to determine which users are able to have admin privileges to make changes in the Grafana interface
+![image](https://github.com/user-attachments/assets/4cb4eeb9-5b5e-48ed-9e89-3446d861b73b)
+Above is an example of the User Access control
 
-The server itself is locked by a 30 character
+Referring to the NACL and SG created as above, the reasoning for selecting my personal IP address for access to is because I, as the admin am the person who wants to have total access control to the Grafana interface. I deem that Grafana can infact show sensitive data 
+
+- Metrics releating to corporate network
+- Potential vulnerabilites and wormholes
+- Exposing potential IP Address
+- Exposes logs and fixes and database layouts that exist in the network
+
+  For Prometheus, it is essentially the same issue. There are numerous amounts of sensitive data that not everyone, including the users in the subnets should have access to. The private one may have access to sensitive information at times, but not all the time, where as the public one hypothetically may not have access to it. 
+
+  As for the subnets, they were created to be separated from each other, via private on one, public on another. This is because it can segemnt and separate the flow of traffic from one device to another, esesentially ensuring that it receives the correct route at most times.
 
 # Restriction of Access in AWS
 
 Security Groups, which are essentially instance based control menus that control what goes in and what goes out. As mentioned before, I have developed both NACLs and Security Groups for both the VPC and the Instance. The devices on the subnet are given access to such limited information on both the NACL and the SG. 
 
-![image](https://github.com/user-attachments/assets/cb0b2832-8f08-45dc-86b8-71262524d70f)
-Example of how User Access Control functions in Grafana
+In the terminal, I also configured firewall privileges, allowing access for the following ports
+sudo ufw allow 22/tcp port for allowing access via SSH
+
+sudo ufw allow 3000/tcp port for access to Grafana
+
+sudo ufw allow 9090/tcp port for allowing Prometheus to function
+
+sudo ufw allow 9100/tcp port for node-exporter functionality
+
+Firewalls can benefit for a multitude of reasons, as firewalls are a determining factor that act as a shield or filter for incoming and outcoming traffic that is either trustable or untrustable, and when these commands are defined, the firewalls knows what packets it should be looking for in the ports. For one firewalls themselves, tightly control who can access the server remotely, and who can potentially make changes to the server remotely. And this goes for all of the ports mentioned above.
+
+![image](https://github.com/user-attachments/assets/a47cfcdf-b40c-4efc-bf06-6ead9e5006b7)
 
 
 ### 7. Software Features
@@ -448,6 +476,7 @@ Prometheus recognizing node-exporter
 ![image](https://github.com/user-attachments/assets/c2792f02-2ccc-4216-874d-61d32bf4e480)
 Access Control List Usage in Grafana
 
+
 ### 8. Backup Policy
 ______________________________
 While backups are hypothetical in this case, in real events, backups can be a crucial part of maintaining an AWS server environment and will help the server run more efficiently. 
@@ -461,6 +490,7 @@ Good backups in the event of potential data loss that may effect both loss of Gr
 - Back up the default location for SQLite data in a binary or source installation: $WORKING_DIR/data/grafana.db
 - MySQL can also be backed up using the commmands mysqldump -u root -p[root_password] [grafana] > grafana_backup.sql per according to the website
 - Data assets and web assets used for building dashboards (Also good for Prometheus as well)
+- All other important data files, like documents, photos, videos, emails, executionable, 7z files that may exist on the server
 
 # Prometheus good backups?
 Prometheus, another software that should also highly considered for backups. According to https://prometheus.io/docs/prometheus/latest/storage/ , Prometheus includes a local on-disk time series database, but also optionally integrates with remote storage systems. Meaning that it can be stored on both the server itself and on Prometheus itself too. I also found that Prometheus data storages can be conducted via a cloud service storage opportunity known as a S3 bucket.
@@ -511,7 +541,25 @@ According to ChatGPT a decent data plan could be to
 
 
    # 3-2-1 Go Backup Plan!
-  One of the best countermeasures for data recovery is to establish a well defying and easy to use data backup plan. This is beneficial to have multiple access spots for data backup  to choose from if more than one option for data backup tends to not work in the event of failure or disaster
+  One of the best countermeasures for data recovery is to establish a well defying and easy to use data backup plan. This is beneficial to have multiple access spots for data backup  to choose from if more than one option for data backup tends to not work in the event of failure or disaster. The 3-2-1 Backup Rile is an effective rule that will assist in the preservation and reliaility of data that is able to be recoverd determining on whether if it has been successfully backed up. For this rule, there are supposed to be "3 copies, 2 different media sources and 1 offsite copy"
+
+  # 3 Copies: Starting with the 3 possibilities of where copies of data can be located for both the Instance, the Grafana service and the Prometheus service, there is
+  
+  - Stored elsewhere on the main EC2 instance. Aside from where the data for the EC2, Grafana and Prometheus can be normally stored, it could be wise to have one of my backups to be in a directory that exists on my server instance itself. It can contain all of the files needed to be backed up as previously mentioned. For example, AWS itself has a setting where it is able to setup a cloning process of data that exists on the server, essentially creating a backup drive
+  - Stored on another server or computer. Despite the fact another server or computer is not infact set up, in the future of running these services, it could be beneficial to build another server or use a high capacity storage laptop in order to store data files previously mentioned
+  - External storage device. Though, this may be basic, but it seems it can be a prevalent and good option to store data on in the event of a data loss, as the data can be stored on an external device and may also be readily available and easily accessible, not mention, external drives are encryptable, just like the server and the laptop
+ 
+# 2 Two Different Types of Media Storage: Possibility of using a different storage media devices to store the information is a good practice 
+
+- HDD/SSD's: Though, these may probably fit in with the External storage drive section from the 3 section, HDD's and SSD's external or even internal can serve of great beneficiary. Multiple drives in a storage unit could allow for Disk mirroring or RAID 1 which will allow for the replication of all data among a drive to be separated towards all the other drives that are available on the server.  Not mention, if we want a drive that has fast read and write speeds, fast performance overall, it would be wise to use a SSD, now the size, considering the amount of data that is possible to exist on these services, a 1TB could be worth while.
+
+- Optical Drives: Though, these can be considered weaker in comparison to the external/internal HDD's/SSD's. They make a good solution for data backups accross a server. It is important to note that flash drives that have a storage capacity above 1TB do exist, and it would most certainly be worth while. It should not be too hateful, especially if the flash drive will only be holding data files from the services. Also, very portable, if needed to resume Grafana, EC2 or Prometheus on a laptop, it can be plugged in with ease and continued from there
+
+  # 1 Offsite Copy: There should atleast be one area where the data mentioned is stored offsite
+
+- Cloud Storage: For this, preferably, I would recommend using AWS S3, which is essentially an AWS Storage bucket designed for AWS connectivity that is able to act as a container in order to store various types of data. It is a decent method of storing and organizing data that is available in the EC2 instance, and as mentioned, is readily available on the instance as it is an AWS service. For example, going into the S3 function in AWS, you can create a bucket that can be attached to a VPC that is able to add security countermeasures such as bucket policies and access control lists that can dictate what can and cannot access the bucket. There are also other cloud options such as Google Drive, OneDrive Backblaze and IBM Cloud Services.
+
+  
 
 
 ### 9. Troubleshooting Issues Encountered
