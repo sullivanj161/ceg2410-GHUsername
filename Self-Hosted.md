@@ -37,7 +37,6 @@ _________________________
 The Subnet block for Grafana was created using the same IP addresses however, these subnets use a /24 CIDR block. I created three subnets
 -Public 10.0.10.0/24 (typically used for mainly instances that regard using 
 -Private 10.0.20.0/24 (typically used for more internal instances such as 
--Server 10.0.30.0/24 (used for hosting instances, such as for hosting Grafana)
 
 # Route Table Rules  
 When creating the Route Tables for the Grafana instance to function, I added route tables to all of the subnets that were created
@@ -317,7 +316,70 @@ These are simple basic post install commands that will require for the software 
 
   - Importing panels
   - Importing a dashboard via grafana.com
-  - 
+  - Creating visualizations
+ 
+  For example, I added Node Exporter to my Grafana, which according to ChatGPT is a simple tool used for hardware measurements and analysis. I used the website https://developer.couchbase.com/tutorial-node-exporter-setup/
+  Here is how I installed it.
+- Step 1 Download Node Exporter
+  wget \
+  https://github.com/prometheus/node_exporter/releases/download/v1.0.1/node_exporter-1.0.1.linux-amd64.tar.gz
+
+  - Step 2 Create User
+ sudo groupadd -f node_exporter
+sudo useradd -g node_exporter --no-create-home --shell /bin/false node_exporter
+sudo mkdir /etc/node_exporter
+sudo chown node_exporter:node_exporter /etc/node_exporter
+
+These users are created for prometheus to take control of and modify in order to view queries 
+
+- Step 3 Unpack Node Exporter Binary
+  tar -xvf node_exporter-1.0.1.linux-amd64.tar.gz
+mv node_exporter-1.0.1.linux-amd64 node_exporter-files
+
+These commands will unzip the files that are obtained in order for node exporter to function and will move them to their proper directory
+
+- Step 4 Install Node Exporter
+  sudo cp node_exporter-files/node_exporter /usr/bin/
+sudo chown node_exporter:node_exporter /usr/bin/node_exporter
+
+Copies the node exporter binary to /usr/bin directory and will change the ownership for Prometheus
+
+- Step 5 Setup Node Exporter Service
+
+sudo vi /usr/lib/systemd/system/node_exporter.service
+
+Edit and configures the service file for Node Exporter
+Also adds the following configuration 
+[Unit]
+Description=Node Exporter
+Documentation=https://prometheus.io/docs/guides/node-exporter/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+Restart=on-failure
+ExecStart=/usr/bin/node_exporter \
+  --web.listen-address=:9100
+
+[Install]
+WantedBy=multi-user.target
+
+then I exited using :wq, saved the file then executed a chmod command to change permissions of a file to be executable via Prometheus
+
+- Step 6 Reload systemd and Start Node Explorer
+  sudo systemctl daemon-reload
+sudo systemctl start node_exporter
+sudo systemctl status node_exporter
+sudo systemctl enable node_exporter.service
+
+will restart and reload and enable the node exporter service to start at server boot up everytime, I also initiated a sudo ufw allow 9100/tcp command to allow traffic to the 9100 port for node exporter
+
+![image](https://github.com/user-attachments/assets/a839c9e1-c66b-4a82-8495-3e6eebad5528)
+Above: image of NodeExporter functioning, while it was idle at the time of the snapshot, it proves that it can capture data.
+
 
 ### 6. Security
 ______________________________
@@ -335,6 +397,9 @@ As mentioned previously. Grafana - it is a multi-purpose and multi-platform anal
 - Performance Tests
 - Managing Alert systems
   and a plethora of useful tools that can server of great benefit for business and IT management desks alike
+
+
+
 
 ### 8. Backup Policy
 ______________________________
